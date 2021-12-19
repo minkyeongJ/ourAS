@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.MemberMapper">
+
+
+  <resultMap type="org.zerock.domain.MemberVO" id="memberMap">
+    <id property="userid" column="userid"/>
+    <result property="userid" column="userid"/>
+    <result property="userpw" column="userpw"/>
+    <result property="userName" column="username"/>
+    <result property="regDate" column="regdate"/>
+    <result property="updateDate" column="updatedate"/>
+    <result property="email" column="email"/>
+    <result property="address" column="address"/>
+    <result property="phone1" column="phone1"/>
+    <result property="phone2" column="phone2"/>
+    <result property="phone3" column="phone3"/>
+    <result property="tel1" column="tel1"/>
+    <result property="tel2" column="tel2"/>
+    <result property="tel3" column="tel3"/>
+    <result property="bizno" column="bizno"/>
+    <result property="crimsPaper" column="crimspaper"/>
+    <result property="mType" column="mtype"/>
+    <result property="comName" column="comname"/>
+    <collection property="authList" resultMap="authMap">
+    </collection> 
+  </resultMap>
+  
+  <resultMap type="org.zerock.domain.AuthVO" id="authMap">
+    <result property="userid" column="userid"/>
+    <result property="auth" column="auth"/>
+  </resultMap>
+  
+  <select id="read" resultMap="memberMap">
+	SELECT 
+	  mem.userid,  userpw, username, enabled, regdate, updatedate, email, address, phone1, phone2, phone3, tel1, tel2, tel3, bizno, crimspaper, mtype, comname, auth
+	FROM 
+	  tbl_member mem LEFT OUTER JOIN tbl_member_auth auth on mem.userid = auth.userid 
+	WHERE mem.userid = #{userid} 
+  </select>
+
+	<select id="getList" resultType="org.zerock.domain.MemberVO">
+	<![CDATA[select * from tbl_member]]>
+	</select>
+
+	<!-- 회원가입 개인정보 부분 -->
+	<insert id="insert">
+		insert into tbl_member (userid, userpw, username, email, address, phone1, phone2, phone3, tel1, tel2, tel3, bizno, crimspaper, mtype, comname)
+		values (#{userid}, #{userpw}, #{userName}, #{email}, #{address}, #{phone1}, #{phone2}, #{phone3}, #{tel1}, #{tel2}, #{tel3}, #{bizno}, #{crimsPaper}, #{mType}, #{comName})
+	</insert>
+	
+	<!-- 회원가입 권한 부분 -->
+	<insert id="insertAuth" parameterType="java.util.List">
+		insert into tbl_member_auth (userid, auth) VALUES 
+		<foreach item="item" index="index" collection="list">
+			(
+			 #{item.userid}
+			 ,#{item.auth}
+			)
+		</foreach>
+	</insert>
+
+
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="username" order="BEFORE" resultType="String">
+			select username from tbl_member
+		</selectKey>
+		
+		insert into tbl_member (userid, userpw, username, email, address, phone1, phone2, phone3, tel1, tel2, tel3, bizno, crimspaper, mtype, comname)
+		values (#{userid}, #{userpw}, #{userName}, #{email}, #{address}, #{phone1}, #{phone2}, #{phone3}, #{tel1}, #{tel2}, #{tel3}, #{bizno}, #{crimsPaper}, #{mType}, #{comName})
+	</insert>
+	
+	<select id="readId" resultType="org.zerock.domain.MemberVO">
+		select * from tbl_member where userid = #{userid}
+	</select>
+	
+	<update id="update">
+		Update tbl_member
+		set email= #{email},
+		address = #{address},
+		phone1 = #{phone1},
+		phone2 = #{phone2},
+		phone3 = #{phone3},
+		tel1= #{tel1},
+		tel2= #{tel2},
+		tel3= #{tel3},
+		updateDate = sysdate
+		where userid=#{userid}
+	</update>
+</mapper>

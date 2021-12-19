@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.BoardReportMapper">
+
+	<!-- 기업 결함보고서 리스트. 자신의 회사만 보이게(comname == comName) -->   
+    <select id="getReportList" resultType="org.zerock.domain.BoardReportVO">
+	   <![CDATA[
+	      select * from tbl_report where comname=#{comName} 
+	      ]]>
+    </select>
+    
+    <insert id="reportInsertSelectKey">
+
+		<selectKey keyProperty="bno" order="BEFORE"
+			resultType="long">
+			select seq_report.nextval from dual
+		</selectKey>
+
+		insert into tbl_report (bno,title,content, writer, comName, product, period, fault, writerPN1, writerPN2, writerPN3)
+		values (#{bno}, #{title}, #{content}, #{writer}, #{comName}, #{product}, #{period}, #{fault}, #{writerPN1}, #{writerPN2}, #{writerPN3})
+	</insert>
+
+	<select id="reportRead" resultType="org.zerock.domain.BoardReportVO">
+		select * from tbl_report where bno = #{bno}
+	</select>
+	
+	<update id="update">
+		update tbl_report
+		set title = #{title},
+		content = #{content},
+		writer = #{writer},
+		comName = #{comName},
+		product = #{product},
+		period = #{period},
+		fault = #{fault}
+		where bno = #{bno}
+	</update>
+	
+	<!-- 결함분석보고서 -->
+	<select id="getAnalysis" resultType="org.zerock.domain.BoardReportVO">
+		select product, count(fault) AS cnt from tbl_report where comname = #{comName} Group By product order by product DESC
+	</select>
+</mapper>

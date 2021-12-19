@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.BoardMapper">
+
+<!-- 민경: customer, engineer, company 게시판 관련 코드 -->
+	<!-- 개인 요청목록 리스트(writer == userid) -->
+	<select id="getCustomerList" resultType="org.zerock.domain.BoardVO">
+	   <![CDATA[
+	      select * from tbl_board where writer=#{userid} 
+	      ]]>
+    </select>
+    
+    <!-- 기업 수리승인요청 리스트. 자신의 회사만 보이게(comname == comName) -->   
+   <select id="getCompanyList" resultType="org.zerock.domain.BoardVO">
+	   <![CDATA[
+	      select * from tbl_board where comname=#{comName} 
+	      ]]>
+   </select>
+
+	<!-- 엔지니어 수리요청 리스트. 매칭중인 내용만 보이게(state == "매칭중") -->
+   <select id="getEngineerList" resultType="org.zerock.domain.BoardVO">
+	   <![CDATA[
+	      select * from tbl_board where state=#{state} 
+	      ]]>
+   </select>
+
+	<!-- 진행상황(state) 변경  bno를 기준으로(modify와 같은 개념) -->
+   <update id="updateState">
+      update tbl_board
+      set state = #{state}
+      where bno = #{bno}
+   </update>
+<!-- 여기까지 -->
+
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item='type' collection="typeArr">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							title like '%'||#{keyword}||'%'
+						</when>
+						<when test="type == 'C'.toString()">
+							content like '%'||#{keyword}||'%'
+						</when>
+						<when test="type == 'W'.toString()">
+							writer like '%'||#{keyword}||'%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+
+
+	<select id="getList" resultType="org.zerock.domain.BoardVO">
+	<![CDATA[
+		select * from tbl_board where bno > 0 
+		]]>
+	</select>
+
+	<insert id="insert">
+		insert into tbl_board (bno,title,content,writer, comName, product)
+		values (seq_board.nextval, #{title}, #{content}, #{writer}, #{comName}, #{product})
+	</insert>
+
+	<insert id="insertSelectKey">
+
+		<selectKey keyProperty="bno" order="BEFORE"
+			resultType="long">
+			select seq_board.nextval from dual
+		</selectKey>
+
+		insert into tbl_board (bno,title,content, writer, comName, product)
+		values (#{bno}, #{title}, #{content}, #{writer}, #{comName}, #{product})
+	</insert>
+
+	<select id="read" resultType="org.zerock.domain.BoardVO">
+		select * from tbl_board where bno = #{bno}
+	</select>
+
+
+	<delete id="delete">
+		delete tbl_board where bno = #{bno}
+	</delete>
+
+	<update id="update">
+		update tbl_board
+		set title = #{title},
+		content = #{content},
+		writer = #{writer},
+		comName = #{comName},
+		product = #{product}
+		where bno = #{bno}
+	</update>
+
+	<!-- getListWithPaging() 수정해서 동적 SQL 처리 -->
+	<select id="getListWithPaging"
+		resultType="org.zerock.domain.BoardVO">
+  <![CDATA[
+	  select 
+	    bno, title, content, writer, regdate, comName, product,state
+	  from 
+	      (
+	      select /*+INDEX_DESC(tbl_board pk_board) */
+	        rownum rn, bno, title, content, writer, regdate, comName, product,state
+	      from 
+	        tbl_board
+	      where 
+	  ]]>
+			<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+				<!-- typeArr : 검색조건 처리 -->
+				<foreach item='type' collection="typeArr">
+					<trim prefix="OR">
+						<choose>
+							<when test="type == 'T'.toString()">
+								title like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'C'.toString()">
+								comName like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'P'.toString()">
+								product like '%'||#{keyword}||'%'
+							</when>
+						</choose>
+					</trim>
+				</foreach>
+			</trim>
+	      
+  <![CDATA[    
+	      rownum <= #{pageNum} * #{amount}
+	      )
+	  where rn > (#{pageNum} -1) * #{amount}   
+  ]]>
+	</select>
+
+
+
+
+	<select id="getTotalCount" resultType="int">
+		select count(*) from tbl_board where 
+		
+		<include refid="criteria"></include> 
+		
+		bno > 0
+		
+	</select>
+
+</mapper>
